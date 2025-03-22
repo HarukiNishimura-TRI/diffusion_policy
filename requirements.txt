@@ -1,0 +1,70 @@
+# Core scientific stack
+numpy>=1.23.3
+scipy>=1.9.1
+matplotlib>=3.6.1
+pandas
+cffi>=1.15.1
+cython>=0.29.32
+h5py>=3.7.0
+numba>=0.54.0
+zarr>=2.12.0
+numcodecs>=0.10.2
+
+# PyTorch and related
+torch==2.6.0
+torchvision>=0.13.1
+pytorchvideo==0.1.5
+tensorboard>=2.10.1
+tensorboardx>=2.5.1
+
+# Environment and simulation
+free-mujoco-py==2.1.6
+dm-control==1.0.9
+pybullet-svl==3.1.6.4
+pygame==2.1.2
+pymunk==6.2.1
+
+# Diffusion Policy-specific and vision models
+huggingface_hub==0.12.1
+hydra-core==1.2.0
+einops==0.4.1
+diffusers==0.11.1
+datasets==2.6.1
+accelerate==0.13.2
+
+# Media and rendering
+imageio>=2.22.0
+imageio-ffmpeg>=0.4.7
+imagecodecs==2022.9.26
+av==10.0.0
+opencv-python
+scikit-image==0.19.3
+scikit-video==1.1.11
+matplotlib-inline
+termcolor>=2.0.1
+
+# Logging, visualization, and utilities
+wandb
+click>=8.0.4
+tqdm>=4.64.1
+dill>=0.3.5.1
+jupyter
+jupyterlab
+notebook
+ipykernel>=6.16
+psutil>=5.9.2
+
+# Cloud & distributed computing
+boto3>=1.24.96
+ray[default,tune]==2.2.0
+shapely>=1.8.4
+
+# Build tools and system
+cmake>=3.24.3
+pip<=24.0
+setuptools==66.0.0
+wheel==0.38.4
+# llvm-openmp==14
+
+# Optional extras
+plotly
