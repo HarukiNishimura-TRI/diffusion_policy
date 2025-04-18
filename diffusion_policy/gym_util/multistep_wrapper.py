@@ -1,5 +1,6 @@
 import gym
 from gym import spaces
+from gymnasium import spaces as gymnasium_spaces
 import numpy as np
 from collections import defaultdict, deque
 import dill
@@ -8,18 +9,33 @@ def stack_repeated(x, n):
     return np.repeat(np.expand_dims(x,axis=0),n,axis=0)
 
 def repeated_box(box_space, n):
-    return spaces.Box(
-        low=stack_repeated(box_space.low, n),
-        high=stack_repeated(box_space.high, n),
-        shape=(n,) + box_space.shape,
-        dtype=box_space.dtype
-    )
+    if isinstance(box_space, spaces.Box):
+        return spaces.Box(
+            low=stack_repeated(box_space.low, n),
+            high=stack_repeated(box_space.high, n),
+            shape=(n,) + box_space.shape,
+            dtype=box_space.dtype
+        )
+    elif isinstance(box_space, gymnasium_spaces.Box):
+        return gymnasium_spaces.Box(
+            low=stack_repeated(box_space.low, n),
+            high=stack_repeated(box_space.high, n),
+            shape=(n,) + box_space.shape,
+            dtype=box_space.dtype
+        )
+    else:
+        raise RuntimeError(f'Unsupported space type {type(box_space)}')
 
 def repeated_space(space, n):
-    if isinstance(space, spaces.Box):
+    if isinstance(space, spaces.Box) or isinstance(space, gymnasium_spaces.Box):
         return repeated_box(space, n)
     elif isinstance(space, spaces.Dict):
         result_space = spaces.Dict()
+        for key, value in space.items():
+            result_space[key] = repeated_space(value, n)
+        return result_space
+    elif isinstance(space, gymnasium_spaces.Dict):
+        result_space = gymnasium_spaces.Dict()
         for key, value in space.items():
             result_space[key] = repeated_space(value, n)
         return result_space
@@ -86,9 +102,9 @@ class MultiStepWrapper(gym.Wrapper):
         self.done = list()
         self.info = defaultdict(lambda : deque(maxlen=n_obs_steps+1))
     
-    def reset(self):
+    def reset(self, **kwargs):
         """Resets the environment using kwargs."""
-        obs = super().reset()
+        obs = super().reset(**kwargs)
 
         self.obs = deque([obs], maxlen=self.n_obs_steps+1)
         self.reward = list()
@@ -128,9 +144,13 @@ class MultiStepWrapper(gym.Wrapper):
         Output (n_steps,) + obs_shape
         """
         assert(len(self.obs) > 0)
-        if isinstance(self.observation_space, spaces.Box):
+        if isinstance(self.observation_space, spaces.Box) or isinstance(
+            self.observation_space, gymnasium_spaces.Box
+        ):
             return stack_last_n_obs(self.obs, n_steps)
-        elif isinstance(self.observation_space, spaces.Dict):
+        elif isinstance(self.observation_space, spaces.Dict) or isinstance(
+            self.observation_space, gymnasium_spaces.Dict
+        ):
             result = dict()
             for key in self.observation_space.keys():
                 result[key] = stack_last_n_obs(
