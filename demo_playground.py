@@ -3,7 +3,6 @@ from copy import deepcopy
 # from functools import partial
 import os
 
-import cv2
 import numpy as np
 from omegaconf import OmegaConf
 from stable_baselines3 import PPO, SAC
