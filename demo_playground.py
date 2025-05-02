@@ -1,3 +1,4 @@
+import argparse
 from copy import deepcopy
 
 # from functools import partial
@@ -96,9 +97,37 @@ def main(env_config_path, policy_model_dir, output_dir, num_episodes):
 
 
 if __name__ == "__main__":
-    policy_model_name = "run_407whnzl"
-    zarr_name = "maze_replay.zarr"
-    num_episodes = 200
+    parser = argparse.ArgumentParser(
+        description="Script to generate demonstraiton data for diffusion policy."
+    )
+    parser.add_argument(
+        "--rl_model_name",
+        type=str,
+        required=True,
+        help=(
+            "Model name of the RL policy. The model must be located under "
+            "`playground/logs/<model_name>`"
+        ),
+    )
+    parser.add_argument(
+        "--zarr_name",
+        type=str,
+        required=True,
+        help=(
+            "Name of the Zarr file to save demonstration data. The data will "
+            "be created at `data/playground/<zarr_name>_<model_name>.zarr`."
+        ),
+    )
+    parser.add_argument(
+        "--num_episodes",
+        type=int,
+        default=200,
+        help=("Number of demonstration trajectories. Defaults to 200."),
+    )
+    args = parser.parse_args()
+    policy_model_name = args.rl_model_name
+    zarr_name = f"{args.zarr_name}_{args.rl_model_name}.zarr"
+    num_episodes = args.num_episodes
 
     current_dir = os.path.dirname(os.path.realpath(__file__))
     env_config_path = os.path.join(
