@@ -40,7 +40,7 @@ multi_run:
   wandb_name_base: 2025.03.28-14.20.06_train_diffusion_unet_hybrid_pusht_image
 n_action_steps: 8
 n_latency_steps: 0
-n_obs_steps: 4
+n_obs_steps: 3
 name: train_diffusion_unet_hybrid
 obs_as_global_cond: true
 optimizer:
@@ -84,22 +84,22 @@ policy:
   shape_meta:
     action:
       shape:
-      - 2
+      - 3
     obs:
       image:
         shape:
-        - 3
+        - 6
         - 256
         - 256
         type: rgb
 shape_meta:
   action:
     shape:
-    - 2
+    - 3
   obs:
     image:
       shape:
-      - 3
+      - 6
       - 256
       - 256
       type: rgb
@@ -112,7 +112,7 @@ task:
     pad_before: ${eval:'${n_obs_steps}-1'}
     seed: 42
     val_ratio: 0.02
-    zarr_path: /workspace/data/playground/maze_replay_run_407whnzl.zarr
+    zarr_path: /workspace/data/playground/maze_replay_run_407whnzl_with_progress.zarr
   env_runner:
     _target_: diffusion_policy.env_runner.playground_image_runner.PlayGroundImageRunner
     fps: 50
@@ -127,18 +127,18 @@ task:
     train_start_seed: 0
     config_path: /workspace/playground/configs/config.yaml
   image_shape:
-  - 3
+  - 6
   - 256
   - 256
   name: playground_image
   shape_meta:
     action:
       shape:
-      - 2
+      - 3
     obs:
       image:
         shape:
-        - 3
+        - 6
         - 256
         - 256
         type: rgb

@@ -14,7 +14,13 @@ from diffusion_policy.common.replay_buffer import ReplayBuffer
 from playground.envs import make_point_maze_env
 
 
-def main(env_config_path, policy_model_dir, output_dir, num_episodes):
+def main(
+    env_config_path: str,
+    policy_model_dir: str,
+    output_dir: str,
+    num_episodes: str,
+    action_includes_progress: bool = False,
+):
     """
     Collect demonstration for the Playground task.
 
@@ -56,7 +62,8 @@ def main(env_config_path, policy_model_dir, output_dir, num_episodes):
 
         # reset env and get observations (including info and render for recording)
         obs = eval_env.reset(seed=seed)
-        img = deepcopy(obs["rgb_stack"])
+        init_img = deepcopy(obs["rgb_stack"])
+        img = deepcopy(init_img)
         if not config.env.return_rgb_observation:
             # Do not feed the image if it is not used during training
             del obs["rgb_stack"]
@@ -73,7 +80,7 @@ def main(env_config_path, policy_model_dir, output_dir, num_episodes):
                 [obs["observation"], obs["achieved_goal"], obs["desired_goal"]]
             )
             data = {
-                "img": img,
+                "img": np.concatenate([img, init_img], axis=-1),
                 "state": np.float32(state),
                 "action": np.float32(act),
             }
@@ -87,6 +94,14 @@ def main(env_config_path, policy_model_dir, output_dir, num_episodes):
                 del obs["rgb_stack"]
             if vec_env.normalize_obs:
                 obs = vec_env.normalize_obs(obs)
+
+        if action_includes_progress:
+            # Add normalized task progress to the action.
+            for idx, progress in enumerate(
+                np.linspace(0.0, 1.0, len(episode))
+            ):
+                data = episode[idx]
+                data["action"] = np.concatenate([data["action"], [progress]])
 
         # save episode buffer to replay buffer (on disk)
         data_dict = dict()
@@ -124,9 +139,21 @@ if __name__ == "__main__":
         default=200,
         help=("Number of demonstration trajectories. Defaults to 200."),
     )
+    parser.add_argument(
+        "--action_includes_progress",
+        action="store_true",
+        default=False,
+        help=(
+            "If True, action includes normalized task progress. Defaults to False."
+        ),
+    )
     args = parser.parse_args()
     policy_model_name = args.rl_model_name
-    zarr_name = f"{args.zarr_name}_{args.rl_model_name}.zarr"
+    action_includes_progress = args.action_includes_progress
+    if action_includes_progress:
+        zarr_name = f"{args.zarr_name}_{args.rl_model_name}_with_progress.zarr"
+    else:
+        zarr_name = f"{args.zarr_name}_{args.rl_model_name}.zarr"
     num_episodes = args.num_episodes
 
     current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -137,4 +164,10 @@ if __name__ == "__main__":
         current_dir, f"../playground/logs/{policy_model_name}/models"
     )
     output_dir = os.path.join(current_dir, f"../data/playground/{zarr_name}")
-    main(env_config_path, policy_model_dir, output_dir, num_episodes)
+    main(
+        env_config_path,
+        policy_model_dir,
+        output_dir,
+        num_episodes,
+        action_includes_progress,
+    )

@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import wandb
 import numpy as np
 import torch
@@ -5,7 +7,6 @@ import collections
 import pathlib
 import tqdm
 import dill
-import math
 import wandb.sdk.data_types.video as wv
 from omegaconf import OmegaConf
 
@@ -173,14 +174,28 @@ class PlayGroundImageRunner(BaseImageRunner):
             mininterval=self.tqdm_interval_sec,
         )
 
-        def aggregate_obs(obs_list):
+        def aggregate_obs(obs_list, init_obs_list):
+            if not len(obs_list) == len(init_obs_list):
+                raise (
+                    ValueError(
+                        "obs_list and init_obs_list must have the same length."
+                    )
+                )
             image_list = []
-            for obs in obs_list:
+            for idx in range(len(obs_list)):
+                obs = obs_list[idx]
                 np_image = np.moveaxis(
                     obs["rgb_stack"].astype(np.float32) / 255,
                     -1,
                     1,
                 )
+                init_obs = init_obs_list[idx]
+                init_np_image = np.moveaxis(
+                    init_obs["rgb_stack"].astype(np.float32) / 255,
+                    -1,
+                    1,
+                )
+                np_image = np.concatenate([np_image, init_np_image], axis=-3)
                 image_list.append(np_image)
             np_image = np.stack(image_list, axis=0)
             obs = {"image": np_image}
@@ -191,7 +206,8 @@ class PlayGroundImageRunner(BaseImageRunner):
         for this_env in envs:
             this_obs = this_env.reset()
             obs_list.append(this_obs)
-        obs_aggregated = aggregate_obs(obs_list)
+        init_obs_list = deepcopy(obs_list)
+        obs_aggregated = aggregate_obs(obs_list, init_obs_list)
         policy.reset()
 
         done_list = [False for _ in range(n_envs)]
@@ -213,13 +229,14 @@ class PlayGroundImageRunner(BaseImageRunner):
             )
             action = np_action_dict["action"]
             for env_idx, this_env in enumerate(envs):
-                this_action = action[env_idx]
+                n_act = this_env.action_space.shape[-1]
+                this_action = action[env_idx][..., :n_act]
                 # step env
                 obs, reward, done, _info = this_env.step(this_action)
                 done_list[env_idx] = done
                 obs_list[env_idx] = obs
                 reward_list[env_idx] += reward
-            obs_aggregated = aggregate_obs(obs_list)
+            obs_aggregated = aggregate_obs(obs_list, init_obs_list)
 
             # update pbar
             pbar.update(action.shape[1])
