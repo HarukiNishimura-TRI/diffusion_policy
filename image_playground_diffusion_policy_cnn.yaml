@@ -112,7 +112,7 @@ task:
     pad_before: ${eval:'${n_obs_steps}-1'}
     seed: 42
     val_ratio: 0.02
-    zarr_path: /workspace/data/playground/maze_replay_run_407whnzl_with_progress.zarr
+    zarr_path: /workspace/data/playground/maze_replay_filtered_run_407whnzl_with_progress.zarr
   env_runner:
     _target_: diffusion_policy.env_runner.playground_image_runner.PlayGroundImageRunner
     fps: 50
